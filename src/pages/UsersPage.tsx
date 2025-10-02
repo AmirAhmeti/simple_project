@@ -8,6 +8,7 @@ import {
 } from '@chakra-ui/react'
 import { AddIcon, ChevronDownIcon, DeleteIcon, EditIcon } from '@chakra-ui/icons'
 import AddUserModal, { type AddUserFormValues } from '@/components/AddUserModal'
+import EditUserModal, { type EditUserFormValues } from '@/components/EditUserModal'
 
 type SortKey = 'name' | 'email' | 'company'
 
@@ -40,6 +41,7 @@ export default function UsersPage() {
   }, [items, query, sortKey, sortDir])
 
   const [isAddOpen, setAddOpen] = useState(false)
+  const [editUser, setEditUser] = useState<User | null>(null)
 
   function handleAdd(values: AddUserFormValues) {
     const user: Omit<User, 'id'> = {
@@ -52,10 +54,17 @@ export default function UsersPage() {
     setAddOpen(false)
   }
 
-  function handleQuickEdit(user: User) {
-    const newName = prompt('Update name', user.name)
-    if (!newName) return
-    dispatch(updateUser({ ...user, name: newName }))
+  function handleEdit(values: EditUserFormValues) {
+    if (!editUser) return
+    const updatedUser: User = {
+      ...editUser,
+      name: values.name,
+      email: values.email,
+      company: values.company ? { name: values.company } : undefined
+    }
+    dispatch(updateUser(updatedUser))
+    toast({ title: 'User updated', status: 'success' })
+    setEditUser(null)
   }
 
   function handleDelete(id: number) {
@@ -108,7 +117,7 @@ export default function UsersPage() {
                       <Td onClick={() => navigate(`/users/${u.id}`)}>{u.company?.name ?? '-'}</Td>
                       <Td>
                         <HStack>
-                          <IconButton aria-label="edit" icon={<EditIcon />} size="sm" onClick={() => handleQuickEdit(u)} />
+                          <IconButton aria-label="edit" icon={<EditIcon />} size="sm" onClick={() => setEditUser(u)} />
                           <IconButton aria-label="delete" icon={<DeleteIcon />} size="sm" colorScheme="red" onClick={() => handleDelete(u.id)} />
                         </HStack>
                       </Td>
@@ -121,6 +130,12 @@ export default function UsersPage() {
         </CardBody>
       </Card>
       <AddUserModal isOpen={isAddOpen} onClose={() => setAddOpen(false)} onSubmit={handleAdd} />
+      <EditUserModal 
+        isOpen={!!editUser} 
+        onClose={() => setEditUser(null)} 
+        onSubmit={handleEdit} 
+        user={editUser} 
+      />
     </Stack>
   )
 }
